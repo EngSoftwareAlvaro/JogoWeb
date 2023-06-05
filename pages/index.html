@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Par ou Ímpar</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <style>
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  max-width: 480px; 
+  width: 80%; 
+  padding: 20px;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Par ou Ímpar</h2>
+
+    <form id="join-form">
+      <div class="input-field">
+        <input type="text" id="player-name" required>
+        <label for="player-name">Seu nome</label>
+      </div>
+      <button type="submit" class="btn">Entrar no jogo</button>
+    </form>
+
+    <div id="game-area" style="display: none;">
+      <h4> <span id="player"></span> VS  <span id="opponent"></span></h4>
+      
+      
+      <form id="choice-form" style="display: none;">
+        <p>Escolha par ou ímpar:</p>
+        <p>
+          <label>
+            <input class="with-gap" name="choice" type="radio" value="par" required>
+            <span>Par</span>
+          </label>
+        </p>
+        <p>
+          <label>
+            <input class="with-gap" name="choice" type="radio" value="ímpar" required>
+            <span>Ímpar</span>
+          </label>
+        </p>
+        
+        <div class="input-field">
+          <input type="number" id="number" required>
+          <label for="number">Número</label>
+        </div>
+        
+        <button type="submit" class="btn">Enviar</button>
+      </form>
+
+      <div id="result" style="display: none;">
+        <h4>Resultado: <span id="result-text"></span></h4>
+        <button id="play-again" class="btn">Jogar novamente</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const joinForm = document.getElementById('join-form');
+      const playerNameInput = document.getElementById('player-name');
+      const gameArea = document.getElementById('game-area');
+      const playerElement = document.getElementById('player');
+      const opponentElement = document.getElementById('opponent');
+      const choiceForm = document.getElementById('choice-form');
+      const numberInput = document.getElementById('number');
+      const resultElement = document.getElementById('result');
+      const resultTextElement = document.getElementById('result-text');
+      const playAgainButton = document.getElementById('play-again');
+
+      joinForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        const playerName = playerNameInput.value;
+        socket.emit('joinGame', { playerName });
+        joinForm.style.display = 'none';
+        gameArea.style.display = 'block';
+        playerElement.textContent = playerName;
+      });
+
+      choiceForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        const choice = choiceForm.elements['choice'].value;
+        const number = parseInt(numberInput.value);
+        socket.emit('makeChoice', { playerId, choice, number });
+        choiceForm.style.display = 'none';
+      });
+
+      playAgainButton.addEventListener('click', function() {
+        choiceForm.style.display = 'block';
+        resultElement.style.display = 'none';
+      });
+
+      const socket = io();
+      let playerId;
+
+      socket.on('connect', function() {
+        playerId = socket.id;
+      });
+
+      socket.on('gameJoined', function(data) {
+        playerId = data.playerId;
+      });
+
+      socket.on('gameStart', function(data) {
+        opponentElement.textContent = data.opponentName;
+        choiceForm.style.display = 'block';
+      });
+
+      socket.on('gameResult', function(data) {
+        resultTextElement.textContent = data.result;
+        resultElement.style.display = 'block';
+      });
+    });
+  </script>
+</body>
+</html>
